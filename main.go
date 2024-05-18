@@ -11,6 +11,7 @@ import (
 	"google.golang.org/api/iterator"
 
 	"github.com/Anjasfedo/go-react-fireauth/configs"
+	"github.com/Anjasfedo/go-react-fireauth/middlewares"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 		})
 	})
 
-	r.GET("/api/secure-data", AuthMiddleware(), func(c *gin.Context) {
+	r.GET("/api/secure-data", middlewares.AuthMiddleware(), func(c *gin.Context) {
 		user, exists := c.Get("user")
 		if !exists {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "User data not found in context"})
@@ -52,43 +53,23 @@ func main() {
 	r.Run()
 }
 
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		uid := c.GetHeader("UID")
-		if uid == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "UID  header required"})
-			c.Abort()
-			return
-		}
 
-		user, err := configs.AuthClient.GetUser(c, uid)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
-			c.Abort()
-			return
-		}
 
-		c.Set("user", user)
+// func allDocs(ctx context.Context, client *firestore.Client) ([]map[string]interface{}, error) {
+// 	var data []map[string]interface{}
 
-		c.Next()
-	}
-}
+// 	iter := client.Collection("posts").Documents(ctx)
+// 	for {
+// 		doc, err := iter.Next()
+// 		if err == iterator.Done {
+// 			break
+// 		}
 
-func allDocs(ctx context.Context, client *firestore.Client) ([]map[string]interface{}, error) {
-	var data []map[string]interface{}
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-	iter := client.Collection("posts").Documents(ctx)
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		data = append(data, doc.Data())
-	}
-	return data, nil
-}
+// 		data = append(data, doc.Data())
+// 	}
+// 	return data, nil
+// }
