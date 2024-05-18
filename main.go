@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"cloud.google.com/go/firestore"
 	"firebase.google.com/go/auth"
+	"google.golang.org/api/iterator"
+
 	"github.com/Anjasfedo/go-react-fireauth/configs"
 )
 
@@ -26,15 +30,22 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "User data not found in context"})
 			return
 		}
-		
+
 		userRecord, ok := user.(*auth.UserRecord)
 		if !ok {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cast user data to *auth.UserRecord"})
 			return
 		}
 
+		data, err := allDocs(c, configs.FirestoreClient)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"userRecord": userRecord,
+			"posts":      data,
 		})
 	})
 
@@ -61,4 +72,23 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func allDocs(ctx context.Context, client *firestore.Client) ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+
+	iter := client.Collection("posts").Documents(ctx)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		data = append(data, doc.Data())
+	}
+	return data, nil
 }

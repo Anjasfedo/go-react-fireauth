@@ -8,9 +8,13 @@ import (
 	"firebase.google.com/go/auth"
 
 	"google.golang.org/api/option"
+
+	"cloud.google.com/go/firestore"
 )
 
 var AuthClient *auth.Client
+
+var FirestoreClient *firestore.Client
 
 func InitFirebase() {
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
@@ -23,5 +27,10 @@ func InitFirebase() {
 	AuthClient, err = app.Auth(context.Background())
 	if err != nil {
 		log.Fatalf("error getting Auth client: %v\n", err)
+	}
+
+	FirestoreClient, err = app.Firestore(context.Background())
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
