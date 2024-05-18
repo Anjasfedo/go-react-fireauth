@@ -19,9 +19,13 @@ func NewRouter() *gin.Engine {
 
 	v1 := router.Group("v1")
 	{
-		postGroup := v1.Group("post")
+		postGroup := v1.Group("posts")
 		{
-			post := new(contro)
+			post := new(controllers.PostController)
+
+			postGroup.GET("/", post.RetrieveAll)
 		}
 	}
+
+	return router
 }
