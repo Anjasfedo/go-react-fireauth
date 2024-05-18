@@ -7,6 +7,7 @@ import (
 
 func main() {
 	configs.InitFirebase()
+	defer configs.CloseFirebase()
 
 	server.Init()
 }
