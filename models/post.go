@@ -43,7 +43,7 @@ func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
 		title, ok1 := data["title"].(string)
 		content, ok2 := data["content"].(string)
 		if !ok1 || !ok2 {
-			continue // Skip this item if type assertion fails
+			continue
 		}
 
 		post := PostResponse{
@@ -92,24 +92,43 @@ func (h *PostResponse) Add(ctx context.Context, data PostRequest) (*string, erro
 	return &ref.ID, err
 }
 
+func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostRequest) (*PostResponse, error) {
+	_, err := h.GetByID(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
 
-func (h *PostResponse) UpdateByID(ctx context.Context,ID string , data PostRequest) (*PostResponse, error) {
-		updates := []firestore.Update{
+	updates := []firestore.Update{
 		{Path: "title", Value: data.Title},
 		{Path: "content", Value: data.Content},
 	}
 
-	_, err := configs.FirestoreClient.Collection("posts").Doc(ID).Update(ctx, updates)
+	_, err = configs.FirestoreClient.Collection("posts").Doc(ID).Update(ctx, updates)
 	if err != nil {
 		log.Printf("An error has occured: %s\n", err)
 		return nil, err
 	}
 
 	updatedPost := &PostResponse{
-		ID: ID,
-		Title: data.Title,
+		ID:      ID,
+		Title:   data.Title,
 		Content: data.Content,
 	}
 
 	return updatedPost, nil
+}
+
+func (h *PostResponse) DeleteById(ctx context.Context, ID string) error {
+	_, err := h.GetByID(ctx, ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = configs.FirestoreClient.Collection("posts").Doc(ID).Delete(ctx)
+	if err != nil {
+		log.Printf("An error has occurred: %s", err)
+		return err
+	}
+
+	return nil
 }
