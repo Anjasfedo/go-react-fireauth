@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"mime/multipart"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
@@ -89,7 +90,7 @@ func (h *PostResponse) GetByID(ctx context.Context, ID string) (*PostResponse, e
 func (h *PostResponse) Add(ctx context.Context, data PostRequest, file multipart.File) (*string, error) {
 	var imageURL string
 	var err error
-	
+
 	if file != nil {
 		imageURL, err = storages.UploadFile(ctx, file)
 		if err != nil {
@@ -112,9 +113,28 @@ func (h *PostResponse) Add(ctx context.Context, data PostRequest, file multipart
 }
 
 func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostRequest, file multipart.File) (*PostResponse, error) {
-	_, err := h.GetByID(ctx, ID)
+	existingPost, err := h.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Delete the existing image if a new image is provided
+	if file != nil {
+		if existingPost.ImageURL != "" {
+			if err := storages.DeleteFile(ctx, existingPost.ImageURL); err != nil {
+				return nil, err
+			}
+		}
+		// Upload the new image
+		imageURL, err := storages.UploadFile(ctx, file)
+		if err != nil {
+			log.Printf("Error uploading file: %s\n", err)
+			return nil, err
+		}
+		data.ImageURL = imageURL
+	} else {
+		// No new image provided, retain the existing one
+		data.ImageURL = existingPost.ImageURL
 	}
 
 	updates := []firestore.Update{
@@ -140,7 +160,7 @@ func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostReque
 }
 
 func (h *PostResponse) DeleteById(ctx context.Context, ID string) error {
-	_, err := h.GetByID(ctx, ID)
+	existingPost, err := h.GetByID(ctx, ID)
 	if err != nil {
 		return err
 	}
@@ -149,6 +169,16 @@ func (h *PostResponse) DeleteById(ctx context.Context, ID string) error {
 	if err != nil {
 		log.Printf("An error has occurred: %s", err)
 		return err
+	}
+
+	if existingPost.ImageURL != "" {
+		imageURLParts := strings.Split(existingPost.ImageURL, "/")
+		imageName := imageURLParts[len(imageURLParts)-1]
+		err := storages.DeleteFile(ctx, imageName)
+		if err != nil {
+			log.Printf("An error occurred while deleting image from storage: %s", err)
+			return err
+		}
 	}
 
 	return nil
