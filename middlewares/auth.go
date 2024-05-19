@@ -2,30 +2,45 @@ package middlewares
 
 import (
 	"net/http"
+	"strings"
 
-	"github.com/Anjasfedo/go-react-fireauth/configs"
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/gin-gonic/gin"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		uid := c.GetHeader("UID")
-		if uid == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "UID  header required"})
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header not found"})
 			c.Abort()
 			return
 		}
 
-		user, err := configs.AuthClient.GetUser(c, uid)
+		// Extract JWT token from the Authorization header
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+
+			return []byte("anjas gantenk"), nil
+		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
 
-		c.Set("user", user)
-
-		c.Next()
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			c.Set("uid", claims["uid"].(string))
+			c.Next()
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
 	}
 }

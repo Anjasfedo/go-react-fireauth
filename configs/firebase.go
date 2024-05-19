@@ -4,23 +4,29 @@ import (
 	"context"
 	"log"
 
+	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
-
 	"google.golang.org/api/option"
 
 	"cloud.google.com/go/firestore"
 )
 
-var AuthClient *auth.Client
+var (
+	AuthClient        *auth.Client
+	FirestoreClient   *firestore.Client
+	StorageBucket     *storage.BucketHandle
+	StorageBucketName = "friendlyeats-codelab-2663a.appspot.com"
+)
 
-var FirestoreClient *firestore.Client
-
-func InitFirebase() {
-	ctx := context.Background()
+func InitFirebase(ctx context.Context) {
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
 
-	app, err := firebase.NewApp(ctx, nil, opt)
+	config := &firebase.Config{
+		StorageBucket: StorageBucketName,
+	}
+
+	app, err := firebase.NewApp(ctx, config, opt)
 	if err != nil {
 		log.Fatalf("error initializing app: %v\n", err)
 	}
@@ -33,6 +39,16 @@ func InitFirebase() {
 	FirestoreClient, err = app.Firestore(ctx)
 	if err != nil {
 		log.Fatalf("Error getting Firestore client: %v\n", err)
+	}
+
+	StorageClient, err := app.Storage(ctx)
+	if err != nil {
+		log.Fatalf("Error getting FireStorage client: %v\n", err)
+	}
+
+	StorageBucket, err = StorageClient.Bucket(StorageBucketName)
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
 
