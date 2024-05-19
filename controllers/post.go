@@ -13,7 +13,7 @@ type PostController struct{}
 
 var postModel = new(models.Post)
 
-func (u PostController) RetrieveAll(c *gin.Context) {
+func (p PostController) RetrieveAll(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	posts, err := postModel.GetAll(ctx)
@@ -26,7 +26,7 @@ func (u PostController) RetrieveAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Posts found!", "posts": posts})
 }
 
-func (u PostController) RetrieveById(c *gin.Context) {
+func (p PostController) RetrieveById(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("id")
 
@@ -40,7 +40,7 @@ func (u PostController) RetrieveById(c *gin.Context) {
 	if err != nil {
 		log.Printf("Error retrieveting post with ID %s: %v\n", id, err)
 
-		if errors.Is(err, models.DocumentNotFoundError) {
+		if errors.Is(err, models.ErrorDocumentNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"message": "Post not found"})
 			c.Abort()
 			return
@@ -52,4 +52,16 @@ func (u PostController) RetrieveById(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Post found!", "post": post})
+}
+
+func (p PostController) AddPost(c *gin.Context) {
+	var post models.Post
+
+	if err := c.ShouldBindBodyWithJSON(&post); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Request"})
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post received", "post": post})
 }

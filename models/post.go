@@ -12,7 +12,7 @@ import (
 	"github.com/Anjasfedo/go-react-fireauth/configs"
 )
 
-var DocumentNotFoundError = errors.New("document not found")
+var ErrorDocumentNotFound = errors.New("document not found")
 
 type Post struct {
 	ID      string `json:"id"`
@@ -56,9 +56,9 @@ func (h *Post) GetByID(ctx context.Context, ID string) (*Post, error) {
 	dsnap, err := configs.FirestoreClient.Collection("posts").Doc(ID).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, DocumentNotFoundError
+			return nil, ErrorDocumentNotFound
 		}
-		
+
 		log.Printf("Error retrieving document with ID %s: %v", ID, err)
 		return nil, err
 	}
@@ -69,4 +69,13 @@ func (h *Post) GetByID(ctx context.Context, ID string) (*Post, error) {
 	}
 
 	return &post, nil
+}
+
+func (h *Post) Add(ctx context.Context, data Post) error {
+	_, _, err := configs.FirestoreClient.Collection("posts").Add(ctx, data)
+	if err != nil {
+		log.Printf("An Error has occurred: %s\n", err)
+	}
+
+	return nil
 }
