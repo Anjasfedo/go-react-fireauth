@@ -15,19 +15,27 @@ import (
 	"github.com/Anjasfedo/go-react-fireauth/configs"
 )
 
-func UploadFile(ctx context.Context, file multipart.File, filePath string) (*string, error) {
+func UploadFile(ctx context.Context, file multipart.File) (string, error) {
 	filename := uuid.New().String()
 
 	wc := configs.StorageBucket.Object(filename).NewWriter(ctx)
-	defer wc.Close()
+	defer func() {
+		if err := wc.Close(); err != nil {
+			fmt.Printf("error closing writer: %v\n", err)
+		}
+	}()
 
-	if _, err := io.Copy(wc, file); err != nil {
-		return nil, fmt.Errorf("io.Copy: %v", err)
-	}
+    log.Println("Starting file upload to Firebase Storage")
 
-	imageURL := "gs://" + configs.StorageBucketName + "/" + filename
+    if _, err := io.Copy(wc, file); err != nil {
+        log.Printf("Error copying file to writer: %v\n", err)
+        return "", fmt.Errorf("io.Copy: %v", err)
+    }
 
-	return &imageURL, nil
+    log.Println("File uploaded successfully")
+
+    imageURL := fmt.Sprintf("https://storage.googleapis.com/%s/%s", configs.StorageBucketName, filename)
+    return imageURL, nil
 }
 
 func DeleteFile(ctx context.Context, objectName string) error {

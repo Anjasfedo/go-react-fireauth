@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"mime/multipart"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
@@ -11,21 +12,22 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/Anjasfedo/go-react-fireauth/configs"
+	"github.com/Anjasfedo/go-react-fireauth/storages"
 )
 
 var ErrorDocumentNotFound = errors.New("document not found")
 
 type PostResponse struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Image   string `json:"image"`
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	ImageURL string `json:"imageURL"`
 }
 
 type PostRequest struct {
-	Title   string `json:"title" firestore:"title" binding:"required,min=5"`
-	Content string `json:"content" firestore:"content"`
-	Image   string `json:"image" firestore:"image"`
+	Title    string `json:"title" form:"title" firestore:"title" binding:"required,min=5"`
+	Content  string `json:"content" form:"content" firestore:"content"`
+	ImageURL string `json:"imageURL" form:"imageURL" firestore:"imageURL"`
 }
 
 func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
@@ -44,16 +46,16 @@ func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
 		data := doc.Data()
 		title, ok1 := data["title"].(string)
 		content, ok2 := data["content"].(string)
-		image, ok3 := data["image"].(string)
+		imageURL, ok3 := data["imageURL"].(string)
 		if !ok1 || !ok2 || !ok3 {
 			continue
 		}
 
 		post := PostResponse{
-			ID:      doc.Ref.ID,
-			Title:   title,
-			Content: content,
-			Image: image,
+			ID:       doc.Ref.ID,
+			Title:    title,
+			Content:  content,
+			ImageURL: imageURL,
 		}
 		posts = append(posts, post)
 	}
@@ -84,10 +86,18 @@ func (h *PostResponse) GetByID(ctx context.Context, ID string) (*PostResponse, e
 	return post, nil
 }
 
-func (h *PostResponse) Add(ctx context.Context, data PostRequest) (*string, error) {
+func (h *PostResponse) Add(ctx context.Context, data PostRequest, file multipart.File) (*string, error) {
+	imageURL, err := storages.UploadFile(ctx, file)
+	if err != nil {
+		log.Printf("Error uploading file: %s\n", err)
+		return nil, err
+	}
+
+	data.ImageURL = imageURL
+
 	ref := configs.FirestoreClient.Collection("posts").NewDoc()
 
-	_, err := ref.Set(ctx, data)
+	_, err = ref.Set(ctx, data)
 	if err != nil {
 		log.Printf("An error has occurred: %s\n", err)
 		return nil, err
@@ -105,7 +115,7 @@ func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostReque
 	updates := []firestore.Update{
 		{Path: "title", Value: data.Title},
 		{Path: "content", Value: data.Content},
-		{Path: "image", Value: data.Image},
+		{Path: "imageURL", Value: data.ImageURL},
 	}
 
 	_, err = configs.FirestoreClient.Collection("posts").Doc(ID).Update(ctx, updates)
@@ -115,10 +125,10 @@ func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostReque
 	}
 
 	updatedPost := &PostResponse{
-		ID:      ID,
-		Title:   data.Title,
-		Content: data.Content,
-		Image: data.Image,
+		ID:       ID,
+		Title:    data.Title,
+		Content:  data.Content,
+		ImageURL: data.ImageURL,
 	}
 
 	return updatedPost, nil

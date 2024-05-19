@@ -56,15 +56,27 @@ func (p PostController) RetrieveById(c *gin.Context) {
 
 func (p PostController) AddPost(c *gin.Context) {
 	ctx := c.Request.Context()
-	var post models.PostRequest
+	// var post models.PostRequest
 
-	if err := c.ShouldBindBodyWithJSON(&post); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request", "error": err.Error()})
+    err := c.Request.ParseMultipartForm(10 << 20)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Error parsing multipart form", "error": err.Error()})
 		c.Abort()
 		return
 	}
 
-	ID, err := postModel.Add(ctx, post)
+	file, _, err := c.Request.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Error retrieving image file", "error": err.Error()})
+		c.Abort()
+		return
+	}
+	defer file.Close()
+
+	title := c.Request.FormValue("title")
+	content := c.Request.FormValue("content")
+
+	ID, err := postModel.Add(ctx, models.PostRequest{Title: title, Content: content}, file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error to add post", "error": err.Error()})
 		c.Abort()

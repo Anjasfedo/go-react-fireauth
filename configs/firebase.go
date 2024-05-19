@@ -16,7 +16,7 @@ var (
 	AuthClient        *auth.Client
 	FirestoreClient   *firestore.Client
 	StorageBucket     *storage.BucketHandle
-	StorageBucketName = "gs://friendlyeats-codelab-2663a.appspot.com"
+	StorageBucketName = "friendlyeats-codelab-2663a.appspot.com"
 )
 
 func InitFirebase() {
