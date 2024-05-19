@@ -23,7 +23,7 @@ func (p PostController) RetrieveAll(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Posts found!", "posts": posts})
+	c.JSON(http.StatusOK, gin.H{"message": "Posts found", "posts": posts})
 }
 
 func (p PostController) RetrieveById(c *gin.Context) {
@@ -41,7 +41,7 @@ func (p PostController) RetrieveById(c *gin.Context) {
 		log.Printf("Error retrieveting post with ID %s: %v\n", id, err)
 
 		if errors.Is(err, models.ErrorDocumentNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"message": "PostResponse not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": "Post not found"})
 			c.Abort()
 			return
 		}
@@ -51,7 +51,7 @@ func (p PostController) RetrieveById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "PostResponse found!", "post": post})
+	c.JSON(http.StatusOK, gin.H{"message": "Post  found", "post": post})
 }
 
 func (p PostController) AddPost(c *gin.Context) {
@@ -64,12 +64,12 @@ func (p PostController) AddPost(c *gin.Context) {
 		return
 	}
 
-	err := postModel.Add(ctx, post)
+	ID, err := postModel.Add(ctx, post)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error to add post", "error": err})
 		c.Abort()
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Post created"})
+	c.JSON(http.StatusCreated, gin.H{"message": "Post created", "ID": ID})
 }

@@ -21,10 +21,9 @@ type PostResponse struct {
 }
 
 type PostRequest struct {
-    Title   string `json:"title" firestore:"title" binding:"required,min=5"`
-    Content string `json:"content" firestore:"content"`
+	Title   string `json:"title" firestore:"title" binding:"required,min=5"`
+	Content string `json:"content" firestore:"content"`
 }
-
 
 func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
 	var posts []PostResponse
@@ -77,12 +76,14 @@ func (h *PostResponse) GetByID(ctx context.Context, ID string) (*PostResponse, e
 	return &post, nil
 }
 
-func (h *PostResponse) Add(ctx context.Context, data PostRequest) error {
-	_, _, err := configs.FirestoreClient.Collection("posts").Add(ctx, data)
+func (h *PostResponse) Add(ctx context.Context, data PostRequest) (*string, error) {
+	ref := configs.FirestoreClient.Collection("posts").NewDoc()
+
+	_, err := ref.Set(ctx, data)
 	if err != nil {
 		log.Printf("An Error has occurred: %s\n", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &ref.ID, err
 }
