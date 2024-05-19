@@ -1,7 +1,6 @@
 package server
 
 import (
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/Anjasfedo/go-react-fireauth/controllers"
@@ -22,6 +21,12 @@ func NewRouter() *gin.Engine {
 
 	v1 := router.Group("v1")
 	{
+		authGroup := v1.Group("auth")
+		{
+			auth := &controllers.AuthController{}
+
+			authGroup.POST("/token/", auth.GenerateJWT)
+		}
 		postGroup := v1.Group("posts")
 		{
 			post := &controllers.PostController{}
