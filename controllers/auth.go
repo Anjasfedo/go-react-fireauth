@@ -11,19 +11,19 @@ import (
 
 type AuthController struct{}
 
-func (h AuthController) GenerateJWT(c *gin.Context) {
+func (a AuthController) GenerateJWT(c *gin.Context) {
 	var requestBody struct {
-		UID string `json:"uid" binding:"required"`
+		UID string `json:"uid" form:"uid" binding:"required"`
 	}
 
-	if err := c.ShouldBindBodyWithJSON(&requestBody); err != nil {
+	if err := c.ShouldBind(&requestBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	user, err := configs.AuthClient.GetUser(c, requestBody.UID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user"})
 		return
 	}
 
@@ -43,5 +43,13 @@ func (h AuthController) GenerateJWT(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+	c.SetCookie("jwt", tokenString, 3600, "/", "127.0.0.1:8080", false, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Login success"})
+}
+
+func (a AuthController) ClearCookie(c *gin.Context) {
+	c.SetCookie("jwt", "", -1, "/", "127.0.0.1:8080", false, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logout success"})
 }

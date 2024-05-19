@@ -17,19 +17,20 @@ func NewRouter() *gin.Engine {
 	health := new(controllers.HealthController)
 	router.GET("/health", health.Status)
 
-	router.Use(middlewares.AuthMiddleware())
-
 	v1 := router.Group("v1")
 	{
-		authGroup := v1.Group("auth")
+		authGroup := v1.Group("auths")
 		{
 			auth := &controllers.AuthController{}
 
-			authGroup.POST("/token/", auth.GenerateJWT)
+			authGroup.POST("/login/", auth.GenerateJWT)
+			authGroup.GET("/logout/", auth.ClearCookie)
 		}
 		postGroup := v1.Group("posts")
 		{
 			post := &controllers.PostController{}
+
+			postGroup.Use(middlewares.AuthMiddleware())
 
 			postGroup.GET("/", post.RetrieveAll)
 			postGroup.GET("/:id/", post.RetrieveById)
