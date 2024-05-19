@@ -10,6 +10,9 @@ import (
 
 func NewRouter() *gin.Engine {
 	router := gin.New()
+
+	router.MaxMultipartMemory = 8 << 20
+	
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
