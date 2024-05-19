@@ -51,7 +51,7 @@ func (p PostController) RetrieveById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Post  found", "post": post})
+	c.JSON(http.StatusOK, gin.H{"message": "Post found", "post": post})
 }
 
 func (p PostController) AddPost(c *gin.Context) {
@@ -72,4 +72,26 @@ func (p PostController) AddPost(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Post created", "ID": ID})
+}
+
+func (p PostController) UpdatePostByID(c *gin.Context) {
+	ctx := c.Request.Context()
+	ID := c.Param("id")
+
+	var post models.PostRequest
+
+	if err := c.ShouldBindBodyWithJSON(&post); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request", "error": err.Error()})
+		c.Abort()
+		return
+	}
+
+	updatedPost, err := postModel.UpdateByID(ctx, ID, post)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error to update post", "error": err})
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post updated", "post": updatedPost})
 }

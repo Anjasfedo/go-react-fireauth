@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -67,13 +68,16 @@ func (h *PostResponse) GetByID(ctx context.Context, ID string) (*PostResponse, e
 		log.Printf("Error retrieving document with ID %s: %v", ID, err)
 		return nil, err
 	}
-	var post PostResponse
+
+	post := &PostResponse{
+		ID: ID,
+	}
 
 	if err := dsnap.DataTo(&post); err != nil {
 		return nil, err
 	}
 
-	return &post, nil
+	return post, nil
 }
 
 func (h *PostResponse) Add(ctx context.Context, data PostRequest) (*string, error) {
@@ -81,9 +85,31 @@ func (h *PostResponse) Add(ctx context.Context, data PostRequest) (*string, erro
 
 	_, err := ref.Set(ctx, data)
 	if err != nil {
-		log.Printf("An Error has occurred: %s\n", err)
+		log.Printf("An error has occurred: %s\n", err)
 		return nil, err
 	}
 
 	return &ref.ID, err
+}
+
+
+func (h *PostResponse) UpdateByID(ctx context.Context,ID string , data PostRequest) (*PostResponse, error) {
+		updates := []firestore.Update{
+		{Path: "title", Value: data.Title},
+		{Path: "content", Value: data.Content},
+	}
+
+	_, err := configs.FirestoreClient.Collection("posts").Doc(ID).Update(ctx, updates)
+	if err != nil {
+		log.Printf("An error has occured: %s\n", err)
+		return nil, err
+	}
+
+	updatedPost := &PostResponse{
+		ID: ID,
+		Title: data.Title,
+		Content: data.Content,
+	}
+
+	return updatedPost, nil
 }

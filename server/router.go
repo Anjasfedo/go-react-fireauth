@@ -28,6 +28,7 @@ func NewRouter() *gin.Engine {
 			postGroup.GET("/", post.RetrieveAll)
 			postGroup.GET("/:id", post.RetrieveById)
 			postGroup.POST("/", post.AddPost)
+			postGroup.PUT("/:id", post.UpdatePostByID)
 		}
 	}
 
