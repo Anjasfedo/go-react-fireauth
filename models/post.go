@@ -14,14 +14,20 @@ import (
 
 var ErrorDocumentNotFound = errors.New("document not found")
 
-type Post struct {
+type PostResponse struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
 
-func (h *Post) GetAll(ctx context.Context) ([]Post, error) {
-	var posts []Post
+type PostRequest struct {
+    Title   string `json:"title" firestore:"title" binding:"required,min=5"`
+    Content string `json:"content" firestore:"content"`
+}
+
+
+func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
+	var posts []PostResponse
 
 	iter := configs.FirestoreClient.Collection("posts").Documents(ctx)
 	for {
@@ -40,7 +46,7 @@ func (h *Post) GetAll(ctx context.Context) ([]Post, error) {
 			continue // Skip this item if type assertion fails
 		}
 
-		post := Post{
+		post := PostResponse{
 			ID:      doc.Ref.ID,
 			Title:   title,
 			Content: content,
@@ -51,7 +57,7 @@ func (h *Post) GetAll(ctx context.Context) ([]Post, error) {
 	return posts, nil
 }
 
-func (h *Post) GetByID(ctx context.Context, ID string) (*Post, error) {
+func (h *PostResponse) GetByID(ctx context.Context, ID string) (*PostResponse, error) {
 
 	dsnap, err := configs.FirestoreClient.Collection("posts").Doc(ID).Get(ctx)
 	if err != nil {
@@ -62,7 +68,7 @@ func (h *Post) GetByID(ctx context.Context, ID string) (*Post, error) {
 		log.Printf("Error retrieving document with ID %s: %v", ID, err)
 		return nil, err
 	}
-	var post Post
+	var post PostResponse
 
 	if err := dsnap.DataTo(&post); err != nil {
 		return nil, err
@@ -71,10 +77,11 @@ func (h *Post) GetByID(ctx context.Context, ID string) (*Post, error) {
 	return &post, nil
 }
 
-func (h *Post) Add(ctx context.Context, data Post) error {
+func (h *PostResponse) Add(ctx context.Context, data PostRequest) error {
 	_, _, err := configs.FirestoreClient.Collection("posts").Add(ctx, data)
 	if err != nil {
 		log.Printf("An Error has occurred: %s\n", err)
+		return err
 	}
 
 	return nil

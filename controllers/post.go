@@ -11,7 +11,7 @@ import (
 
 type PostController struct{}
 
-var postModel = new(models.Post)
+var postModel = new(models.PostResponse)
 
 func (p PostController) RetrieveAll(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -31,7 +31,7 @@ func (p PostController) RetrieveById(c *gin.Context) {
 	id := c.Param("id")
 
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request"})
 		c.Abort()
 		return
 	}
@@ -41,7 +41,7 @@ func (p PostController) RetrieveById(c *gin.Context) {
 		log.Printf("Error retrieveting post with ID %s: %v\n", id, err)
 
 		if errors.Is(err, models.ErrorDocumentNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"message": "Post not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": "PostResponse not found"})
 			c.Abort()
 			return
 		}
@@ -51,17 +51,25 @@ func (p PostController) RetrieveById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Post found!", "post": post})
+	c.JSON(http.StatusOK, gin.H{"message": "PostResponse found!", "post": post})
 }
 
 func (p PostController) AddPost(c *gin.Context) {
-	var post models.Post
+	ctx := c.Request.Context()
+	var post models.PostRequest
 
 	if err := c.ShouldBindBodyWithJSON(&post); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Request"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request", "error": err.Error()})
 		c.Abort()
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Post received", "post": post})
+	err := postModel.Add(ctx, post)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error to add post", "error": err})
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Post created"})
 }

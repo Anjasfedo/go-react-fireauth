@@ -1,9 +1,11 @@
 package server
 
 import (
+
+	"github.com/gin-gonic/gin"
+
 	"github.com/Anjasfedo/go-react-fireauth/controllers"
 	"github.com/Anjasfedo/go-react-fireauth/middlewares"
-	"github.com/gin-gonic/gin"
 )
 
 func NewRouter() *gin.Engine {
