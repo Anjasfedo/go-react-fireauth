@@ -12,12 +12,10 @@ func NewRouter() *gin.Engine {
 	router := gin.New()
 
 	router.MaxMultipartMemory = 10 << 20
-	
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
 	health := new(controllers.HealthController)
-
 	router.GET("/health", health.Status)
 
 	router.Use(middlewares.AuthMiddleware())
@@ -26,13 +24,13 @@ func NewRouter() *gin.Engine {
 	{
 		postGroup := v1.Group("posts")
 		{
-			post := new(controllers.PostController)
+			post := &controllers.PostController{}
 
 			postGroup.GET("/", post.RetrieveAll)
-			postGroup.GET("/:id", post.RetrieveById)
+			postGroup.GET("/:id/", post.RetrieveById)
 			postGroup.POST("/", post.AddPost)
-			postGroup.PUT("/:id", post.UpdatePostByID)
-			postGroup.DELETE("/:id", post.DeletePostById)
+			postGroup.PUT("/:id/", post.UpdatePostByID)
+			postGroup.DELETE("/:id/", post.DeletePostById)
 		}
 	}
 

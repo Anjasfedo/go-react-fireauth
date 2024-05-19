@@ -19,8 +19,7 @@ var (
 	StorageBucketName = "friendlyeats-codelab-2663a.appspot.com"
 )
 
-func InitFirebase() {
-	ctx := context.Background()
+func InitFirebase(ctx context.Context) {
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
 
 	config := &firebase.Config{

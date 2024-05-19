@@ -6,10 +6,7 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
-	"net/http"
-	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"github.com/Anjasfedo/go-react-fireauth/configs"
@@ -25,13 +22,13 @@ func UploadFile(ctx context.Context, file multipart.File) (string, error) {
 		}
 	}()
 
-    if _, err := io.Copy(wc, file); err != nil {
-        log.Printf("Error copying file to writer: %v\n", err)
-        return "", fmt.Errorf("io.Copy: %v", err)
-    }
+	if _, err := io.Copy(wc, file); err != nil {
+		log.Printf("Error copying file to writer: %v\n", err)
+		return "", fmt.Errorf("io.Copy: %v", err)
+	}
 
-    imageURL := fmt.Sprintf("https://storage.googleapis.com/%s/%s", configs.StorageBucketName, filename)
-    return imageURL, nil
+	imageURL := fmt.Sprintf("https://storage.googleapis.com/%s/%s", configs.StorageBucketName, filename)
+	return imageURL, nil
 }
 
 func DeleteFile(ctx context.Context, objectName string) error {
@@ -44,37 +41,28 @@ func DeleteFile(ctx context.Context, objectName string) error {
 	return nil
 }
 
-func DownloadFile(ctx *gin.Context, objectName string, destFilePath string) {
-	rc, err := configs.StorageBucket.Object(objectName).NewReader(ctx)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Object(%q).NewReader: %v", objectName, err))
-		return
-	}
-	defer rc.Close()
+// func DownloadFile(ctx *gin.Context, objectName string) {
+// 	obj := configs.StorageBucket.Object(objectName)
+// 	attrs, err := obj.Attrs(ctx)
+// 	if err != nil {
+// 		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Object(%q).Attrs: %v", objectName, err))
+// 		return
+// 	}
 
-	f, err := os.Create(destFilePath)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("os.Create: %v", err))
-		return
-	}
-	defer f.Close()
+// 	rc, err := obj.NewReader(ctx)
+// 	if err != nil {
+// 		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Object(%q).NewReader: %v", objectName, err))
+// 		return
+// 	}
+// 	defer rc.Close()
 
-	if _, err := io.Copy(f, rc); err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("io.Copy: %v", err))
-		return
-	}
+// 	// Set the appropriate headers
+// 	ctx.Header("Content-Description", "File Transfer")
+// 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", objectName))
+// 	ctx.Header("Content-Type", attrs.ContentType)
 
-	// Set the appropriate headers
-	ctx.Header("Content-Description", "File Transfer")
-	ctx.Header("Content-Transfer-Encoding", "binary")
-	ctx.Header("Content-Disposition", "attachment; filename="+objectName)
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Expires", "0")
-	ctx.Header("Cache-Control", "must-revalidate")
-	ctx.Header("Pragma", "public")
+// 	// Serve the file directly to the client without saving it locally
+// 	ctx.DataFromReader(http.StatusOK, attrs.Size, attrs.ContentType, rc, nil)
 
-	// Send the file as response
-	ctx.File(destFilePath)
-
-	log.Printf("Blob %v downloaded and returned to client.\n", objectName)
-}
+// 	log.Printf("Blob %v streamed and returned to client.\n", objectName)
+// }
