@@ -24,6 +24,7 @@ func NewRouter() *gin.Engine {
 			post := new(controllers.PostController)
 
 			postGroup.GET("/", post.RetrieveAll)
+			postGroup.GET("/:id", post.RetrieveById)
 		}
 	}
 

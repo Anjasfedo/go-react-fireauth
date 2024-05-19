@@ -2,11 +2,17 @@ package models
 
 import (
 	"context"
+	"errors"
+	"log"
 
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/Anjasfedo/go-react-fireauth/configs"
 )
+
+var DocumentNotFoundError = errors.New("document not found")
 
 type Post struct {
 	ID      string `json:"id"`
@@ -35,7 +41,7 @@ func (h *Post) GetAll(ctx context.Context) ([]Post, error) {
 		}
 
 		post := Post{
-			ID: doc.Ref.ID,
+			ID:      doc.Ref.ID,
 			Title:   title,
 			Content: content,
 		}
@@ -43,4 +49,24 @@ func (h *Post) GetAll(ctx context.Context) ([]Post, error) {
 	}
 
 	return posts, nil
+}
+
+func (h *Post) GetByID(ctx context.Context, ID string) (*Post, error) {
+
+	dsnap, err := configs.FirestoreClient.Collection("posts").Doc(ID).Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, DocumentNotFoundError
+		}
+		
+		log.Printf("Error retrieving document with ID %s: %v", ID, err)
+		return nil, err
+	}
+	var post Post
+
+	if err := dsnap.DataTo(&post); err != nil {
+		return nil, err
+	}
+
+	return &post, nil
 }
