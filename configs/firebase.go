@@ -15,6 +15,7 @@ import (
 var (
 	AuthClient        *auth.Client
 	FirestoreClient   *firestore.Client
+	StorageClient     *storage.Client
 	StorageBucket     *storage.BucketHandle
 	StorageBucketName = "friendlyeats-codelab-2663a.appspot.com"
 )
@@ -41,15 +42,12 @@ func InitFirebase(ctx context.Context) {
 		log.Fatalf("Error getting Firestore client: %v\n", err)
 	}
 
-	StorageClient, err := app.Storage(ctx)
+	StorageClient, err = storage.NewClient(ctx, opt)
 	if err != nil {
-		log.Fatalf("Error getting FireStorage client: %v\n", err)
+		log.Fatalf("Error getting Storage client: %v\n", err)
 	}
 
-	StorageBucket, err = StorageClient.Bucket(StorageBucketName)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	StorageBucket = StorageClient.Bucket(StorageBucketName)
 }
 
 func CloseFirebase() {
@@ -58,4 +56,10 @@ func CloseFirebase() {
 			log.Fatalf("Failed to close Firestore client: %v", err)
 		}
 	}
+
+    if StorageClient != nil {
+        if err := StorageClient.Close(); err != nil {
+            log.Fatalf("Failed to close Storage client: %v", err)
+        }
+    }
 }
