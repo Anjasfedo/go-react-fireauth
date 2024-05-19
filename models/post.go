@@ -19,11 +19,13 @@ type PostResponse struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+	Image   string `json:"image"`
 }
 
 type PostRequest struct {
 	Title   string `json:"title" firestore:"title" binding:"required,min=5"`
 	Content string `json:"content" firestore:"content"`
+	Image   string `json:"image" firestore:"image"`
 }
 
 func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
@@ -42,7 +44,8 @@ func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
 		data := doc.Data()
 		title, ok1 := data["title"].(string)
 		content, ok2 := data["content"].(string)
-		if !ok1 || !ok2 {
+		image, ok3 := data["image"].(string)
+		if !ok1 || !ok2 || !ok3 {
 			continue
 		}
 
@@ -50,6 +53,7 @@ func (h *PostResponse) GetAll(ctx context.Context) ([]PostResponse, error) {
 			ID:      doc.Ref.ID,
 			Title:   title,
 			Content: content,
+			Image: image,
 		}
 		posts = append(posts, post)
 	}
@@ -101,6 +105,7 @@ func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostReque
 	updates := []firestore.Update{
 		{Path: "title", Value: data.Title},
 		{Path: "content", Value: data.Content},
+		{Path: "image", Value: data.Image},
 	}
 
 	_, err = configs.FirestoreClient.Collection("posts").Doc(ID).Update(ctx, updates)
@@ -113,6 +118,7 @@ func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostReque
 		ID:      ID,
 		Title:   data.Title,
 		Content: data.Content,
+		Image: data.Image,
 	}
 
 	return updatedPost, nil
