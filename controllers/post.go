@@ -106,14 +106,18 @@ func (p PostController) UpdatePostByID(c *gin.Context) {
 		c.Abort()
 		return
 	}
-
+	
 	file, _, err := c.Request.FormFile("image")
 	if err != nil && err != http.ErrMissingFile {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Error retrieving image file", "error": err.Error()})
 		c.Abort()
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
 
 	title := c.Request.FormValue("title")
 	content := c.Request.FormValue("content")

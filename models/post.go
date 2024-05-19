@@ -121,7 +121,11 @@ func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostReque
 	// Delete the existing image if a new image is provided
 	if file != nil {
 		if existingPost.ImageURL != "" {
-			if err := storages.DeleteFile(ctx, existingPost.ImageURL); err != nil {
+			imageURLParts := strings.Split(existingPost.ImageURL, "/")
+			imageName := imageURLParts[len(imageURLParts)-1]
+			err := storages.DeleteFile(ctx, imageName)
+			if err != nil {
+				log.Printf("An error occurred while deleting image from storage: %s", err)
 				return nil, err
 			}
 		}
