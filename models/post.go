@@ -87,10 +87,15 @@ func (h *PostResponse) GetByID(ctx context.Context, ID string) (*PostResponse, e
 }
 
 func (h *PostResponse) Add(ctx context.Context, data PostRequest, file multipart.File) (*string, error) {
-	imageURL, err := storages.UploadFile(ctx, file)
-	if err != nil {
-		log.Printf("Error uploading file: %s\n", err)
-		return nil, err
+	var imageURL string
+	var err error
+	
+	if file != nil {
+		imageURL, err = storages.UploadFile(ctx, file)
+		if err != nil {
+			log.Printf("Error uploading file: %s\n", err)
+			return nil, err
+		}
 	}
 
 	data.ImageURL = imageURL
@@ -106,7 +111,7 @@ func (h *PostResponse) Add(ctx context.Context, data PostRequest, file multipart
 	return &ref.ID, err
 }
 
-func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostRequest) (*PostResponse, error) {
+func (h *PostResponse) UpdateByID(ctx context.Context, ID string, data PostRequest, file multipart.File) (*PostResponse, error) {
 	_, err := h.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err

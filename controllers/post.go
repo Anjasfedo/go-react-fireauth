@@ -58,7 +58,7 @@ func (p PostController) AddPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	// var post models.PostRequest
 
-    err := c.Request.ParseMultipartForm(10 << 20)
+	err := c.Request.ParseMultipartForm(10 << 20)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Error parsing multipart form", "error": err.Error()})
 		c.Abort()
@@ -66,12 +66,16 @@ func (p PostController) AddPost(c *gin.Context) {
 	}
 
 	file, _, err := c.Request.FormFile("image")
-	if err != nil {
+	if err != nil && err != http.ErrMissingFile {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Error retrieving image file", "error": err.Error()})
 		c.Abort()
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
 
 	title := c.Request.FormValue("title")
 	content := c.Request.FormValue("content")
@@ -96,15 +100,25 @@ func (p PostController) UpdatePostByID(c *gin.Context) {
 		return
 	}
 
-	var post models.PostRequest
-
-	if err := c.ShouldBindBodyWithJSON(&post); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request", "error": err.Error()})
+	err := c.Request.ParseMultipartForm(10 << 20)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Error parsing multipart form", "error": err.Error()})
 		c.Abort()
 		return
 	}
 
-	updatedPost, err := postModel.UpdateByID(ctx, ID, post)
+	file, _, err := c.Request.FormFile("image")
+	if err != nil && err != http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Error retrieving image file", "error": err.Error()})
+		c.Abort()
+		return
+	}
+	defer file.Close()
+
+	title := c.Request.FormValue("title")
+	content := c.Request.FormValue("content")
+
+	updatedPost, err := postModel.UpdateByID(ctx, ID, models.PostRequest{Title: title, Content: content}, file)
 	if err != nil {
 		if err == models.ErrorDocumentNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"message": "Post not found"})

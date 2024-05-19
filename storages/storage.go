@@ -25,14 +25,10 @@ func UploadFile(ctx context.Context, file multipart.File) (string, error) {
 		}
 	}()
 
-    log.Println("Starting file upload to Firebase Storage")
-
     if _, err := io.Copy(wc, file); err != nil {
         log.Printf("Error copying file to writer: %v\n", err)
         return "", fmt.Errorf("io.Copy: %v", err)
     }
-
-    log.Println("File uploaded successfully")
 
     imageURL := fmt.Sprintf("https://storage.googleapis.com/%s/%s", configs.StorageBucketName, filename)
     return imageURL, nil
