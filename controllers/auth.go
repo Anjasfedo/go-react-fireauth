@@ -37,19 +37,13 @@ func (a AuthController) GenerateJWT(c *gin.Context) {
 	})
 
 	// Sign the token with a secret
-	tokenString, err := token.SignedString([]byte("anjas gantek"))
+	tokenString, err := token.SignedString([]byte("anjas gantenk"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate JWT token"})
 		return
 	}
 
-	c.SetCookie("jwt", tokenString, 3600, "/", "127.0.0.1:8080", false, true)
+	c.Header("Authorization", "Bearer "+tokenString)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login success"})
-}
-
-func (a AuthController) ClearCookie(c *gin.Context) {
-	c.SetCookie("jwt", "", -1, "/", "127.0.0.1:8080", false, true)
-
-	c.JSON(http.StatusOK, gin.H{"message": "Logout success"})
 }

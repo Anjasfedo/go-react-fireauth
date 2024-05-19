@@ -23,8 +23,7 @@ func NewRouter() *gin.Engine {
 		{
 			auth := &controllers.AuthController{}
 
-			authGroup.POST("/login/", auth.GenerateJWT)
-			authGroup.GET("/logout/", auth.ClearCookie)
+			authGroup.POST("/token/", auth.GenerateJWT)
 		}
 		postGroup := v1.Group("posts")
 		{

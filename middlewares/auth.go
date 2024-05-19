@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -10,14 +11,17 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cookie, err := c.Cookie("jwt")
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT cookie not found"})
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header not found"})
 			c.Abort()
 			return
 		}
 
-		token, err := jwt.Parse(cookie, func(t *jwt.Token) (interface{}, error) {
+		// Extract JWT token from the Authorization header
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
