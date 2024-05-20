@@ -43,7 +43,5 @@ func (a AuthController) GenerateJWT(c *gin.Context) {
 		return
 	}
 
-	c.Header("Authorization", "Bearer "+tokenString)
-
-	c.JSON(http.StatusOK, gin.H{"message": "Login success"})
+	c.JSON(http.StatusOK, gin.H{"message": "Login success", "token": tokenString})
 }
