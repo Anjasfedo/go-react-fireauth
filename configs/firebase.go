@@ -3,7 +3,8 @@ package configs
 import (
 	"context"
 	"log"
-
+	"os"
+	
 	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
@@ -21,7 +22,12 @@ var (
 )
 
 func InitFirebase(ctx context.Context) {
-	opt := option.WithCredentialsFile("serviceAccountKey.json")
+	serviceAccountPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if serviceAccountPath == "" {
+		serviceAccountPath = "serviceAccountKey.json"
+	}
+
+	opt := option.WithCredentialsFile(serviceAccountPath)
 
 	config := &firebase.Config{
 		StorageBucket: StorageBucketName,
